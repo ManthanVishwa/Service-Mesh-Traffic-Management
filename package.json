@@ -1,0 +1,28 @@
+{
+  "name": "service-mesh-dashboard",
+  "version": "1.0.0",
+  "description": "Service Mesh Traffic Management Dashboard",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend",
+    "dummy-service"
+  ],
+  "scripts": {
+    "dev:backend": "npm run dev --workspace=backend",
+    "dev:frontend": "npm run dev --workspace=frontend",
+    "dev:dummy": "npm run dev --workspace=dummy-service",
+    "build:all": "npm run build --workspaces",
+    "docker:build": "docker-compose build",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down"
+  },
+  "keywords": [
+    "service-mesh",
+    "kubernetes",
+    "istio",
+    "traffic-management"
+  ],
+  "author": "",
+  "license": "MIT"
+}

@@ -1,0 +1,34 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+model TrafficRule {
+    id             String    @id @default(uuid())
+    serviceName    String
+    version1Name   String
+    version2Name   String
+    version1Weight Int       @default(100)
+    version2Weight Int       @default(0)
+    ruleType       RuleType  @default(WEIGHTED)
+    createdAt      DateTime  @default(now())
+    updatedAt      DateTime  @updatedAt
+    deployedAt     DateTime?
+    isActive       Boolean   @default(true)
+
+    @@index([serviceName])
+    @@map("traffic_rules")
+}
+
+enum RuleType {
+    WEIGHTED
+    HEADER_MATCH
+    PATH_BASED
+}

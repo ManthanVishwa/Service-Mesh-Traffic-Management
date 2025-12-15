@@ -1,0 +1,130 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-datasource
+  namespace: monitoring
+data:
+  datasource.yml: |
+    apiVersion: 1
+    datasources:
+    - name: Prometheus
+      type: prometheus
+      access: proxy
+      url: http://prometheus:9090
+      isDefault: true
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-config
+  namespace: monitoring
+data:
+  dashboard.yml: |
+    apiVersion: 1
+    providers:
+    - name: 'default'
+      orgId: 1
+      folder: ''
+      type: file
+      disableDeletion: false
+      updateIntervalSeconds: 10
+      allowUiUpdates: true
+      options:
+        path: /var/lib/grafana/dashboards
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-traffic
+  namespace: monitoring
+data:
+  traffic-dashboard.json: |
+    {
+      "dashboard": {
+        "title": "Service Mesh Traffic Dashboard",
+        "panels": [
+          {
+            "title": "Request Rate by Version",
+            "targets": [
+              {
+                "expr": "rate(http_requests_total{job=~\"dummy-service.*\"}[5m])"
+              }
+            ]
+          },
+          {
+            "title": "Traffic Distribution (%)",
+            "targets": [
+              {
+                "expr": "sum(rate(http_requests_total{job=\"dummy-service-v1\"}[5m])) / sum(rate(http_requests_total{job=~\"dummy-service.*\"}[5m])) * 100"
+              },
+              {
+                "expr": "sum(rate(http_requests_total{job=\"dummy-service-v2\"}[5m])) / sum(rate(http_requests_total{job=~\"dummy-service.*\"}[5m])) * 100"
+              }
+            ]
+          }
+        ]
+      }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: grafana
+  namespace: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+    spec:
+      containers:
+        - name: grafana
+          image: grafana/grafana:10.2.2
+          ports:
+            - containerPort: 3000
+          env:
+            - name: GF_SECURITY_ADMIN_PASSWORD
+              value: admin
+            - name: GF_USERS_ALLOW_SIGN_UP
+              value: "false"
+          volumeMounts:
+            - name: datasource
+              mountPath: /etc/grafana/provisioning/datasources
+            - name: dashboard-config
+              mountPath: /etc/grafana/provisioning/dashboards
+            - name: dashboard
+              mountPath: /var/lib/grafana/dashboards
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+      volumes:
+        - name: datasource
+          configMap:
+            name: grafana-datasource
+        - name: dashboard-config
+          configMap:
+            name: grafana-dashboard-config
+        - name: dashboard
+          configMap:
+            name: grafana-dashboard-traffic
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: grafana
+  namespace: monitoring
+spec:
+  selector:
+    app: grafana
+  ports:
+    - port: 3000
+      targetPort: 3000
+  type: LoadBalancer

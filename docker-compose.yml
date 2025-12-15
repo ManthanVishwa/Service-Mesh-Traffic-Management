@@ -1,0 +1,77 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: mesh-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: meshdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: mesh-backend
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/meshdb
+      PORT: 4000
+      NODE_ENV: production
+    ports:
+      - "4000:4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: mesh-frontend
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:4000
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  dummy-service-v1:
+    build:
+      context: ./dummy-service
+      dockerfile: Dockerfile
+      args:
+        VERSION: v1
+    container_name: dummy-service-v1
+    environment:
+      VERSION: v1
+      PORT: 5000
+    ports:
+      - "5001:5000"
+    restart: unless-stopped
+
+  dummy-service-v2:
+    build:
+      context: ./dummy-service
+      dockerfile: Dockerfile
+      args:
+        VERSION: v2
+    container_name: dummy-service-v2
+    environment:
+      VERSION: v2
+      PORT: 5000
+    ports:
+      - "5002:5000"
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
