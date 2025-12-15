@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: backend-sa
+  namespace: mesh-dashboard
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: istio-config-manager
+  namespace: mesh-dashboard
+rules:
+  - apiGroups: ["networking.istio.io"]
+    resources: ["virtualservices", "destinationrules"]
+    verbs: ["get", "list", "create", "update", "patch", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: backend-istio-access
+  namespace: mesh-dashboard
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: istio-config-manager
+subjects:
+  - kind: ServiceAccount
+    name: backend-sa
+    namespace: mesh-dashboard

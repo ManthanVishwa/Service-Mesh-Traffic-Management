@@ -17,6 +17,7 @@ spec:
         app: backend
         version: v1
     spec:
+      serviceAccountName: backend-sa
       containers:
         - name: backend
           image: mesh-backend:latest
