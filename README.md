@@ -253,7 +253,3 @@ kubectl port-forward svc/grafana -n monitoring 3000:3000
 # PostgreSQL (for debugging)
 kubectl port-forward svc/postgres -n mesh-dashboard 5432:5432
 ```
-
-## 📝 License
-
-MIT
